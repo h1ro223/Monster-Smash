@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>反射神経ゲーム</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <h1>反射神経ゲーム</h1>
-    <div id="game">
-      <div id="waiting">他のプレイヤーを待っています...</div>
-      <button id="startButton" disabled>スタート</button>
-      <div id="reactionButton" style="display: none">クリック！</div>
-    </div>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"></script>
-    <script src="script.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>反射神経ゲーム</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Firebase SDK のスクリプト -->
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"></script>
+</head>
+<body>
+  <h1>反射神経ゲーム</h1>
+  <div id="game">
+    <div id="waiting">他のプレイヤーを待っています...</div>
+    <button id="startButton" disabled>スタート</button>
+    <div id="reactionButton" style="display:none;">クリック！</div>
+  </div>
+  <script src="script.js"></script>
+</body>
 </html>
