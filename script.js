@@ -18,13 +18,13 @@ const startButton = document.getElementById("startButton");
 const reactionButton = document.getElementById("reactionButton");
 const waitingMessage = document.getElementById("waiting");
 
-// Firebase Realtime Database の参照（1回のみ宣言）
+// Firebase Realtime Database の参照
 const gameStatusRef = db.ref("game/status");
 
 // 他のプレイヤーを待つ状態
 gameStatusRef.on("value", (snapshot) => {
   const status = snapshot.val();
-  console.log("ゲームステータス:", status);
+  console.log("現在のステータス:", status);
   if (status === "ready") {
     waitingMessage.style.display = "none";
     startButton.disabled = false;
@@ -33,12 +33,12 @@ gameStatusRef.on("value", (snapshot) => {
 
 // スタートボタンの動作
 startButton.addEventListener("click", () => {
-  gameStatusRef.set("started"); // データベースに"started"をセット
+  gameStatusRef.set("started"); // ステータスを変更
   waitingMessage.style.display = "none";
   startReactionGame();
 });
 
-// 反射神経ゲームの開始
+// 反射神経ゲームの開始処理
 function startReactionGame() {
   setTimeout(() => {
     reactionButton.style.backgroundColor = "green";
