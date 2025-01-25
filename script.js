@@ -1,4 +1,8 @@
-// Firebase 設定
+// Firebase の初期化
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, onValue } from "firebase/database";
+
+// Firebase の構成情報
 const firebaseConfig = {
   apiKey: "AIzaSyD0x_TU433xg_PXTzfpeqXRF7ZZGgceoqw",
   authDomain: "gh-game-9a5a0.firebaseapp.com",
@@ -9,11 +13,10 @@ const firebaseConfig = {
   appId: "1:137631838692:web:40157762f81ea19c8957f1",
 };
 
-// Firebase 初期化
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue } from "firebase/database";
-
+// Firebase アプリの初期化
 const app = initializeApp(firebaseConfig);
+
+// Realtime Database の参照を取得
 const db = getDatabase(app);
 
 // 要素取得
