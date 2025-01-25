@@ -9,21 +9,16 @@ const firebaseConfig = {
   appId: "1:137631838692:web:cf35e90c228d9ddc8957f1"
 };
 
-const gameStatusRef = db.ref("game/status");
-gameStatusRef.on("value", (snapshot) => {
-  console.log("現在のステータス:", snapshot.val());
-});
-
 // Firebase 初期化
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// HTML要素を取得
+// HTML要素の取得
 const startButton = document.getElementById("startButton");
 const reactionButton = document.getElementById("reactionButton");
 const waitingMessage = document.getElementById("waiting");
 
-// Firebase Realtime Database の参照
+// Firebase Realtime Database の参照（1回のみ宣言）
 const gameStatusRef = db.ref("game/status");
 
 // 他のプレイヤーを待つ状態
