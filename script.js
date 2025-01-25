@@ -1,8 +1,4 @@
-// Firebaseをインポート
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
-
-// Firebase 設定（受け取った情報を貼り付けます）
+// Firebase 設定（Firebaseコンソールから取得した情報を貼り付ける）
 const firebaseConfig = {
   apiKey: "AIzaSyD0x_TU433xg_PXTzfpeqXRF7ZZGgceoqw",
   authDomain: "gh-game-9a5a0.firebaseapp.com",
@@ -14,19 +10,19 @@ const firebaseConfig = {
 };
 
 // Firebase 初期化
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// HTML要素を取得
+// HTML要素の取得
 const startButton = document.getElementById("startButton");
 const reactionButton = document.getElementById("reactionButton");
 const waitingMessage = document.getElementById("waiting");
 
-// データベースの参照
-const gameStatusRef = ref(db, "game/status");
+// Firebase Realtime Database の参照
+const gameStatusRef = db.ref("game/status");
 
 // 他のプレイヤーを待つ状態
-onValue(gameStatusRef, (snapshot) => {
+gameStatusRef.on("value", (snapshot) => {
   const status = snapshot.val();
   console.log("ゲームステータス:", status);
   if (status === "ready") {
@@ -37,7 +33,7 @@ onValue(gameStatusRef, (snapshot) => {
 
 // スタートボタンの動作
 startButton.addEventListener("click", () => {
-  set(gameStatusRef, "started"); // データベースに"started"をセット
+  gameStatusRef.set("started"); // データベースに"started"をセット
   waitingMessage.style.display = "none";
   startReactionGame();
 });
@@ -52,7 +48,7 @@ function startReactionGame() {
     reactionButton.addEventListener("click", () => {
       const reactionTime = Date.now() - startTime;
       alert(`反応時間: ${reactionTime}ms`);
-      set(gameStatusRef, "ready");
+      gameStatusRef.set("ready");
     });
   }, Math.random() * 3000 + 2000);
 }
