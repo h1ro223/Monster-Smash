@@ -1,28 +1,32 @@
-// Firebase 設定
+// Firebaseをインポート
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+
+// Firebase 設定（受け取った情報を貼り付けます）
 const firebaseConfig = {
   apiKey: "AIzaSyD0x_TU433xg_PXTzfpeqXRF7ZZGgceoqw",
-    authDomain: "gh-game-9a5a0.firebaseapp.com",
-    databaseURL: "https://gh-game-9a5a0-default-rtdb.firebaseio.com",
-    projectId: "gh-game-9a5a0",
-    storageBucket: "gh-game-9a5a0.firebasestorage.app",
-    messagingSenderId: "137631838692",
-    appId: "1:137631838692:web:cf35e90c228d9ddc8957f1"
+  authDomain: "gh-game-9a5a0.firebaseapp.com",
+  databaseURL: "https://gh-game-9a5a0-default-rtdb.firebaseio.com",
+  projectId: "gh-game-9a5a0",
+  storageBucket: "gh-game-9a5a0.firebasestorage.app",
+  messagingSenderId: "137631838692",
+  appId: "1:137631838692:web:cf35e90c228d9ddc8957f1"
 };
 
 // Firebase 初期化
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-// HTML要素の取得
+// HTML要素を取得
 const startButton = document.getElementById("startButton");
 const reactionButton = document.getElementById("reactionButton");
 const waitingMessage = document.getElementById("waiting");
 
-// Firebase Realtime Database の参照
-const gameStatusRef = db.ref("game/status");
+// データベースの参照
+const gameStatusRef = ref(db, "game/status");
 
 // 他のプレイヤーを待つ状態
-gameStatusRef.on("value", (snapshot) => {
+onValue(gameStatusRef, (snapshot) => {
   const status = snapshot.val();
   console.log("ゲームステータス:", status);
   if (status === "ready") {
@@ -33,7 +37,7 @@ gameStatusRef.on("value", (snapshot) => {
 
 // スタートボタンの動作
 startButton.addEventListener("click", () => {
-  gameStatusRef.set("started"); // データベースに"started"をセット
+  set(gameStatusRef, "started"); // データベースに"started"をセット
   waitingMessage.style.display = "none";
   startReactionGame();
 });
@@ -48,7 +52,7 @@ function startReactionGame() {
     reactionButton.addEventListener("click", () => {
       const reactionTime = Date.now() - startTime;
       alert(`反応時間: ${reactionTime}ms`);
-      gameStatusRef.set("ready"); // 次のゲーム準備
+      set(gameStatusRef, "ready");
     });
-  }, Math.random() * 3000 + 2000); // ランダムタイミングで開始
+  }, Math.random() * 3000 + 2000);
 }
