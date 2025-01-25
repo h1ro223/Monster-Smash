@@ -1,12 +1,12 @@
-// Firebase の初期化（importを削除し、CDN経由で利用）
+// Firebase 設定
 const firebaseConfig = {
   apiKey: "AIzaSyD0x_TU433xg_PXTzfpeqXRF7ZZGgceoqw",
-  authDomain: "gh-game-9a5a0.firebaseapp.com",
-  databaseURL: "https://gh-game-9a5a0-default-rtdb.firebaseio.com",
-  projectId: "gh-game-9a5a0",
-  storageBucket: "gh-game-9a5a0.firebasestorage.app",
-  messagingSenderId: "137631838692",
-  appId: "1:137631838692:web:40157762f81ea19c8957f1",
+    authDomain: "gh-game-9a5a0.firebaseapp.com",
+    databaseURL: "https://gh-game-9a5a0-default-rtdb.firebaseio.com",
+    projectId: "gh-game-9a5a0",
+    storageBucket: "gh-game-9a5a0.firebasestorage.app",
+    messagingSenderId: "137631838692",
+    appId: "1:137631838692:web:40157762f81ea19c8957f1"
 };
 
 // Firebase 初期化
