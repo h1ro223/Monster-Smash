@@ -6,7 +6,7 @@ const firebaseConfig = {
     projectId: "gh-game-9a5a0",
     storageBucket: "gh-game-9a5a0.firebasestorage.app",
     messagingSenderId: "137631838692",
-    appId: "1:137631838692:web:40157762f81ea19c8957f1"
+    appId: "1:137631838692:web:cf35e90c228d9ddc8957f1"
 };
 
 // Firebase 初期化
