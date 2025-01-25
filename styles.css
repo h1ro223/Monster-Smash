@@ -1,0 +1,25 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+#game {
+  margin-top: 50px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+#reactionButton {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 20px;
+  font-size: 24px;
+  display: inline-block;
+  margin-top: 20px;
+}
