@@ -1,4 +1,4 @@
-// Firebase 設定（Firebaseコンソールから取得した情報を貼り付ける）
+// Firebase 設定
 const firebaseConfig = {
   apiKey: "AIzaSyD0x_TU433xg_PXTzfpeqXRF7ZZGgceoqw",
   authDomain: "gh-game-9a5a0.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// HTML要素の取得
+// HTML要素を取得
 const startButton = document.getElementById("startButton");
 const reactionButton = document.getElementById("reactionButton");
 const waitingMessage = document.getElementById("waiting");
