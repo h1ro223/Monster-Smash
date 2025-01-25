@@ -5,12 +5,12 @@ import { getDatabase, ref, set, onValue } from "firebase/database";
 // Firebase の構成情報
 const firebaseConfig = {
   apiKey: "AIzaSyD0x_TU433xg_PXTzfpeqXRF7ZZGgceoqw",
-  authDomain: "gh-game-9a5a0.firebaseapp.com",
-  databaseURL: "https://gh-game-9a5a0-default-rtdb.firebaseio.com",
-  projectId: "gh-game-9a5a0",
-  storageBucket: "gh-game-9a5a0.firebasestorage.app",
-  messagingSenderId: "137631838692",
-  appId: "1:137631838692:web:40157762f81ea19c8957f1",
+    authDomain: "gh-game-9a5a0.firebaseapp.com",
+    databaseURL: "https://gh-game-9a5a0-default-rtdb.firebaseio.com",
+    projectId: "gh-game-9a5a0",
+    storageBucket: "gh-game-9a5a0.firebasestorage.app",
+    messagingSenderId: "137631838692",
+    appId: "1:137631838692:web:40157762f81ea19c8957f1"
 };
 
 // Firebase アプリの初期化
