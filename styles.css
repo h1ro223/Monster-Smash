@@ -2,6 +2,13 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
   padding: 20px;
+  background-color: #f4f4f4;
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: #333;
 }
 
 #game {
@@ -12,14 +19,45 @@ button {
   padding: 10px 20px;
   font-size: 18px;
   cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
 }
 
 #reactionButton {
   background-color: red;
   color: white;
   border: none;
-  padding: 20px;
+  padding: 20px 40px;
   font-size: 24px;
   display: inline-block;
   margin-top: 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#reactionButton:hover {
+  background-color: #b30000;
+}
+
+#reactionButton:active {
+  background-color: green;
+}
+
+#waiting {
+  font-size: 1.2em;
+  color: #666;
+  margin-bottom: 20px;
 }
