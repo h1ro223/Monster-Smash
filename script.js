@@ -1,5 +1,5 @@
 // Firebase の初期化
-import { initializeApp } from "firebase/app";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "firebase/database";
 
 // Firebase の構成情報
