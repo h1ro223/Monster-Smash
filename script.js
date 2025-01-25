@@ -9,6 +9,11 @@ const firebaseConfig = {
   appId: "1:137631838692:web:cf35e90c228d9ddc8957f1"
 };
 
+const gameStatusRef = db.ref("game/status");
+gameStatusRef.on("value", (snapshot) => {
+  console.log("現在のステータス:", snapshot.val());
+});
+
 // Firebase 初期化
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
