@@ -1,46 +1,40 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const enemyHpElem = document.getElementById('enemyHpVal');
 const turnInfoElem = document.getElementById('turnInfo');
-const gaugeBar = document.getElementById('gaugeBar');
-const gaugeText = document.getElementById('gaugeText');
-const nextTurnMsg = document.getElementById('nextTurnMsg');
-
 const WIDTH = canvas.width, HEIGHT = canvas.height;
 
-const CHAR_RADIUS = 32;
-const ENEMY_RADIUS = 40;
-const CHAR_COLORS = ["#f44336", "#2196f3", "#43a047", "#ffd600"];
-const CHAR_NAMES = ["1P", "2P", "3P", "4P"];
-const CHAR_START_Y = HEIGHT - 75;
-const CHAR_SPACING = 66;
-const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 1.5);
+// --- パラメータ ---
+const CHAR_RADIUS = 22; // 直径44px（以前の大きさ）
+const ENEMY_RADIUS = 36; // 敵サイズも少しだけ縮小
+const CHAR_COLORS = ["#f44336", "#2196f3"];
+const CHAR_NAMES = ["1P", "2P"];
+const CHAR_START_Y = HEIGHT - 68;
+const CHAR_SPACING = 64;
+const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 0.5); // 2体用
 const SPEED = 9.5;
-const gaugeMax = 120; // ゲージ最大距離
 
 let chars, enemy, turn, dragging, dragStart, dragCurrent, activeChar, effectTimers, comboFlags;
-let gauge = 0, gaugeRatio = 0, gaugeSuccess = false, gaugeShow = false;
-let nextTurnShow = false, nextTurnTimer = 0;
 
+// --- ゲーム初期化 ---
 function initGame() {
     chars = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
         chars.push({
             x: CHAR_CENTER_X + CHAR_SPACING * i,
             y: CHAR_START_Y,
             vx: 0, vy: 0,
             color: CHAR_COLORS[i],
             name: CHAR_NAMES[i],
-            comboUsed: [false, false, false, false],
-            moving: false
+            moving: false,
+            gaugeSuccess: false // 名残
         });
     }
     enemy = {
         x: WIDTH / 2,
-        y: 90,
+        y: 80,
         r: ENEMY_RADIUS,
-        hp: 50,
-        maxHp: 50
+        hp: 30,
+        maxHp: 30
     };
     turn = 0;
     activeChar = chars[turn];
@@ -48,113 +42,93 @@ function initGame() {
     dragStart = { x: 0, y: 0 };
     dragCurrent = { x: 0, y: 0 };
     effectTimers = [];
-    comboFlags = Array(4).fill(null).map(() => [false, false, false, false]);
-    gauge = 0;
-    gaugeRatio = 0;
-    gaugeSuccess = false;
-    gaugeShow = false;
-    nextTurnShow = false;
-    nextTurnTimer = 0;
+    comboFlags = Array(2).fill(null).map(() => [false, false]);
     updateDisplay();
-    updateGaugeBar(0, false);
-    showNextTurnMsg(false);
 }
 
 function updateDisplay() {
-    enemyHpElem.textContent = enemy.hp;
     turnInfoElem.innerHTML =
-        `<span style="color:${activeChar.color};font-size:1.3em;">${activeChar.name}</span>のターン`;
+        `<span style="color:${activeChar.color};font-size:1.1em;">${activeChar.name}</span>のターン`;
 }
 
-function updateGaugeBar(ratio, isSuccess) {
-    ratio = Math.max(0, Math.min(1, ratio));
-    gaugeBar.style.width = (ratio * 100).toFixed(1) + '%';
-    gaugeText.textContent = `${Math.round(ratio * 100)}%`;
-    gaugeText.style.color = isSuccess ? "#43a047" : (ratio > 0.8 ? "#ff9800" : "#ff5722");
-    gaugeBar.style.background = isSuccess
-        ? "linear-gradient(90deg,#81c784,#ffd600 100%)"
-        : "linear-gradient(90deg, #ff8a65 0%, #ffd600 100%)";
-    // 表示/非表示
-    document.getElementById("gaugeArea").style.opacity = gaugeShow ? 1 : 0.35;
-}
-
-function showNextTurnMsg(show) {
-    if (show) {
-        nextTurnMsg.style.opacity = 1;
-        nextTurnMsg.textContent = "NEXT TURN!";
-    } else {
-        nextTurnMsg.style.opacity = 0;
-        nextTurnMsg.textContent = "";
-    }
-}
-
+// --- 描画 ---
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
+    // --- 枠 ---
     ctx.save();
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.strokeStyle = "#1565c0";
-    ctx.strokeRect(2.5, 2.5, WIDTH - 5, HEIGHT - 5);
+    ctx.strokeRect(2, 2, WIDTH - 4, HEIGHT - 4);
     ctx.restore();
 
-    // 敵
-    ctx.fillStyle = "#bdbdbd";
-    ctx.fillRect(enemy.x - 42, enemy.y - ENEMY_RADIUS - 22, 84, 10);
+    // --- 敵 ---
+    // HPバー（敵の下）
+    const barWidth = 84, barHeight = 9;
+    ctx.fillStyle = "#e0e0e0";
+    ctx.fillRect(enemy.x - barWidth/2, enemy.y + ENEMY_RADIUS + 8, barWidth, barHeight);
     ctx.fillStyle = "#ef5350";
-    ctx.fillRect(enemy.x - 42, enemy.y - ENEMY_RADIUS - 22, 84 * (enemy.hp / enemy.maxHp), 10);
+    ctx.fillRect(
+        enemy.x - barWidth/2, enemy.y + ENEMY_RADIUS + 8,
+        barWidth * (enemy.hp / enemy.maxHp), barHeight
+    );
+    ctx.strokeStyle = "#aaa";
+    ctx.strokeRect(enemy.x - barWidth/2, enemy.y + ENEMY_RADIUS + 8, barWidth, barHeight);
 
+    // 敵本体
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.r, 0, Math.PI * 2);
     ctx.fillStyle = "#8e24aa";
     ctx.shadowColor = "#a881af";
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 8;
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.strokeStyle = "#fff59d";
     ctx.stroke();
-    ctx.font = "bold 18px sans-serif";
+    ctx.font = "bold 17px sans-serif";
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
-    ctx.fillText("ENEMY", enemy.x, enemy.y + 7);
+    ctx.fillText("ENEMY", enemy.x, enemy.y + 6);
 
-    // キャラ
-    for (let i = 0; i < 4; i++) {
+    // --- キャラ ---
+    for (let i = 0; i < 2; i++) {
         let c = chars[i];
         ctx.beginPath();
         ctx.arc(c.x, c.y, CHAR_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = c.color;
         ctx.shadowColor = "#888";
-        ctx.shadowBlur = (turn === i ? 14 : 0);
+        ctx.shadowBlur = (turn === i ? 10 : 0);
         ctx.fill();
         ctx.shadowBlur = 0;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3;
         ctx.strokeStyle = "#fff";
         ctx.stroke();
-        ctx.font = "bold 17px sans-serif";
+        ctx.font = "bold 15px sans-serif";
         ctx.fillStyle = "#fff";
         ctx.textAlign = "center";
-        ctx.fillText(c.name, c.x, c.y + 7);
+        ctx.fillText(c.name, c.x, c.y + 5);
+        // 操作中キャラに白縁
         if (turn === i) {
             ctx.save();
-            ctx.lineWidth = 6;
+            ctx.lineWidth = 5;
             ctx.strokeStyle = "#fffde7";
             ctx.beginPath();
-            ctx.arc(c.x, c.y, CHAR_RADIUS + 5, 0, Math.PI * 2);
+            ctx.arc(c.x, c.y, CHAR_RADIUS + 3, 0, Math.PI * 2);
             ctx.stroke();
             ctx.restore();
         }
     }
 
-    // モンスト風矢印ガイド
+    // --- 引っ張り線（ガイド） ---
     if (dragging) {
         ctx.save();
-        ctx.setLineDash([8, 10]);
+        ctx.setLineDash([8, 9]);
         ctx.beginPath();
         ctx.moveTo(activeChar.x, activeChar.y);
         ctx.lineTo(dragCurrent.x, dragCurrent.y);
-        ctx.strokeStyle = gaugeSuccess ? "#43a047" : "#ff7043";
-        ctx.lineWidth = 6;
+        ctx.strokeStyle = "#ff7043";
+        ctx.lineWidth = 4;
         ctx.globalAlpha = 0.85;
         ctx.stroke();
         ctx.setLineDash([]);
@@ -162,9 +136,9 @@ function draw() {
         let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
         let len = Math.sqrt(dx*dx + dy*dy);
         let unitX = dx / (len || 1), unitY = dy / (len || 1);
-        let tipX = activeChar.x + unitX * Math.min(len, gaugeMax);
-        let tipY = activeChar.y + unitY * Math.min(len, gaugeMax);
-        let arrowSize = 18;
+        let arrowSize = 13;
+        let tipX = activeChar.x + unitX * Math.min(len, 90);
+        let tipY = activeChar.y + unitY * Math.min(len, 90);
         ctx.beginPath();
         ctx.moveTo(tipX, tipY);
         ctx.lineTo(
@@ -176,13 +150,14 @@ function draw() {
             tipY - unitY * arrowSize + unitX * arrowSize * 0.5
         );
         ctx.closePath();
-        ctx.fillStyle = gaugeSuccess ? "#43a047" : "#ff7043";
+        ctx.fillStyle = "#ff7043";
         ctx.globalAlpha = 0.85;
         ctx.fill();
         ctx.globalAlpha = 1.0;
         ctx.restore();
     }
 
+    // --- 友情エフェクト ---
     for (let e of effectTimers) drawEffect(e);
 }
 
@@ -190,138 +165,90 @@ function drawEffect(e) {
     ctx.save();
     if (e.type === "cross") {
         ctx.strokeStyle = "#e3f2fd";
-        ctx.lineWidth = 12;
+        ctx.lineWidth = 9;
         for (let d of [[1,0], [-1,0], [0,1], [0,-1]]) {
             ctx.beginPath();
             ctx.moveTo(e.x, e.y);
-            ctx.lineTo(e.x + d[0] * 210, e.y + d[1] * 210);
-            ctx.globalAlpha = e.timer / 18;
+            ctx.lineTo(e.x + d[0] * 140, e.y + d[1] * 140);
+            ctx.globalAlpha = e.timer / 14;
             ctx.stroke();
         }
     } else if (e.type === "xlaser") {
         ctx.strokeStyle = "#c8e6c9";
-        ctx.lineWidth = 11;
+        ctx.lineWidth = 7;
         for (let d of [[1,1], [-1,1], [1,-1], [-1,-1]]) {
             ctx.beginPath();
             ctx.moveTo(e.x, e.y);
-            ctx.lineTo(e.x + d[0] * 160, e.y + d[1] * 160);
-            ctx.globalAlpha = e.timer / 18;
+            ctx.lineTo(e.x + d[0] * 105, e.y + d[1] * 105);
+            ctx.globalAlpha = e.timer / 14;
             ctx.stroke();
         }
-    } else if (e.type === "homing") {
-        ctx.strokeStyle = "#fff59d";
-        ctx.lineWidth = 15;
-        ctx.beginPath();
-        ctx.moveTo(e.x, e.y);
-        ctx.lineTo(enemy.x, enemy.y);
-        ctx.globalAlpha = e.timer / 18;
-        ctx.stroke();
-    } else if (e.type === "speed") {
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, CHAR_RADIUS + 20 * Math.random(), 0, Math.PI * 2);
-        ctx.strokeStyle = "#ffb300";
-        ctx.lineWidth = 4;
-        ctx.globalAlpha = e.timer / 18 * 0.7;
-        ctx.stroke();
     }
     ctx.restore();
 }
 
+// --- ロジック ---
 function update() {
     for (let c of chars) {
         c.x += c.vx;
         c.y += c.vy;
-        c.vx *= 0.987;
-        c.vy *= 0.987;
+        c.vx *= 0.985;
+        c.vy *= 0.985;
         if (c.x - CHAR_RADIUS < 0) { c.x = CHAR_RADIUS; c.vx *= -1; }
         if (c.x + CHAR_RADIUS > WIDTH) { c.x = WIDTH - CHAR_RADIUS; c.vx *= -1; }
         if (c.y - CHAR_RADIUS < 0) { c.y = CHAR_RADIUS; c.vy *= -1; }
         if (c.y + CHAR_RADIUS > HEIGHT) { c.y = HEIGHT - CHAR_RADIUS; c.vy *= -1; }
-        if (Math.abs(c.vx) < 0.15 && Math.abs(c.vy) < 0.15) {
+        if (Math.abs(c.vx) < 0.13 && Math.abs(c.vy) < 0.13) {
             c.vx = c.vy = 0;
         }
-        c.moving = Math.abs(c.vx) > 0.18 || Math.abs(c.vy) > 0.18;
+        c.moving = Math.abs(c.vx) > 0.15 || Math.abs(c.vy) > 0.15;
     }
 
     // 敵ヒット
     for (let c of chars) {
         if (enemy.hp > 0 && dist(c, enemy) < CHAR_RADIUS + ENEMY_RADIUS) {
-            let dmg = c.gaugeSuccess ? 2 : 1;
-            enemy.hp -= dmg;
+            enemy.hp -= 1;
             if (enemy.hp < 0) enemy.hp = 0;
             updateDisplay();
             let angle = Math.atan2(enemy.y - c.y, enemy.x - c.x);
-            c.vx += -Math.cos(angle) * 3;
-            c.vy += -Math.sin(angle) * 3;
-            c.gaugeSuccess = false;
+            c.vx += -Math.cos(angle) * 2.7;
+            c.vy += -Math.sin(angle) * 2.7;
         }
     }
     // キャラ同士友情
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
         if (i === j) continue;
         let a = chars[i], b = chars[j];
         if (!a.moving && !b.moving) continue;
-        if (!comboFlags[i][j] && dist(a, b) < CHAR_RADIUS * 2 + 4) {
+        if (!comboFlags[i][j] && dist(a, b) < CHAR_RADIUS * 2 + 2) {
             comboFlags[i][j] = true;
             triggerFriendCombo(i, j, a, b);
             let angle = Math.atan2(b.y - a.y, b.x - a.x);
-            b.vx += Math.cos(angle) * 2;
-            b.vy += Math.sin(angle) * 2;
+            b.vx += Math.cos(angle) * 1.8;
+            b.vy += Math.sin(angle) * 1.8;
         }
     }
     effectTimers = effectTimers.filter(e => --e.timer > 0);
 
     // ターン終了判定
-    if (!dragging && !chars[turn].moving && Math.abs(chars[turn].vx) < 0.18 && Math.abs(chars[turn].vy) < 0.18) {
-        if (!nextTurnShow) {
-            nextTurnShow = true;
-            nextTurnTimer = 36; // 0.6秒くらい
-            showNextTurnMsg(true);
-        }
-    }
-    // NEXT TURN表示
-    if (nextTurnShow) {
-        nextTurnTimer--;
-        if (nextTurnTimer <= 0) {
-            showNextTurnMsg(false);
-            nextTurnShow = false;
-            doNextTurn();
-        }
+    if (!dragging && !chars[turn].moving && Math.abs(chars[turn].vx) < 0.16 && Math.abs(chars[turn].vy) < 0.16) {
+        doNextTurn();
     }
 }
 
 function doNextTurn() {
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) comboFlags[i][j] = false;
-    turn = (turn + 1) % 4;
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) comboFlags[i][j] = false;
+    turn = (turn + 1) % 2;
     activeChar = chars[turn];
-    gauge = 0;
-    gaugeRatio = 0;
-    gaugeSuccess = false;
-    gaugeShow = false;
     updateDisplay();
-    updateGaugeBar(0, false);
 }
 
 function triggerFriendCombo(attackerIdx, targetIdx, a, b) {
-    switch (targetIdx) {
-        case 0:
-            effectTimers.push({ type: "cross", x: b.x, y: b.y, timer: 18 });
-            break;
-        case 1:
-            effectTimers.push({ type: "speed", x: b.x, y: b.y, timer: 18 });
-            a.vx *= 1.35;
-            a.vy *= 1.35;
-            break;
-        case 2:
-            effectTimers.push({ type: "xlaser", x: b.x, y: b.y, timer: 18 });
-            break;
-        case 3:
-            effectTimers.push({ type: "homing", x: b.x, y: b.y, timer: 18 });
-            if (enemy.hp > 0) {
-                enemy.hp--;
-                updateDisplay();
-            }
-            break;
+    // 1P: 十字レーザー, 2P: クロスレーザー
+    if (targetIdx === 0) {
+        effectTimers.push({ type: "cross", x: b.x, y: b.y, timer: 14 });
+    } else if (targetIdx === 1) {
+        effectTimers.push({ type: "xlaser", x: b.x, y: b.y, timer: 14 });
     }
 }
 
@@ -330,27 +257,23 @@ function dist(a, b) {
     return Math.hypot(dx, dy);
 }
 
-// -- 入力：盤面のどこからでもドラッグ開始OK、常にactiveCharだけ --
+// 入力：操作キャラ上からのみドラッグ開始OK
 canvas.addEventListener("mousedown", (e) => {
-    if (dragging || activeChar.moving || nextTurnShow) return;
+    if (dragging || activeChar.moving) return;
     const rect = canvas.getBoundingClientRect();
-    dragging = true;
-    dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    dragCurrent = { ...dragStart };
-    gaugeShow = true;
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const d = Math.hypot(mx - activeChar.x, my - activeChar.y);
+    if (d < CHAR_RADIUS) {
+        dragging = true;
+        dragStart = { x: mx, y: my };
+        dragCurrent = { ...dragStart };
+    }
 });
 canvas.addEventListener("mousemove", (e) => {
     if (dragging) {
         const rect = canvas.getBoundingClientRect();
         dragCurrent.x = e.clientX - rect.left;
         dragCurrent.y = e.clientY - rect.top;
-        // gauge: キャラ中心→今の位置までの距離
-        let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
-        let len = Math.sqrt(dx * dx + dy * dy);
-        gauge = Math.min(len, gaugeMax);
-        gaugeRatio = gauge / gaugeMax;
-        gaugeSuccess = gaugeRatio > 0.8;
-        updateGaugeBar(gaugeRatio, gaugeSuccess);
     }
 });
 canvas.addEventListener("mouseup", (e) => {
@@ -360,23 +283,22 @@ canvas.addEventListener("mouseup", (e) => {
         activeChar.vx = -Math.cos(angle) * SPEED;
         activeChar.vy = -Math.sin(angle) * SPEED;
         activeChar.moving = true;
-        activeChar.gaugeSuccess = gaugeSuccess;
         dragging = false;
-        gaugeShow = false;
-        updateGaugeBar(0, false);
     }
 });
-
 // タッチ
 canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
-    if (dragging || activeChar.moving || nextTurnShow) return;
+    if (dragging || activeChar.moving) return;
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
-    dragging = true;
-    dragStart = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
-    dragCurrent = { ...dragStart };
-    gaugeShow = true;
+    const mx = touch.clientX - rect.left, my = touch.clientY - rect.top;
+    const d = Math.hypot(mx - activeChar.x, my - activeChar.y);
+    if (d < CHAR_RADIUS) {
+        dragging = true;
+        dragStart = { x: mx, y: my };
+        dragCurrent = { ...dragStart };
+    }
 }, { passive: false });
 
 canvas.addEventListener("touchmove", (e) => {
@@ -386,12 +308,6 @@ canvas.addEventListener("touchmove", (e) => {
         const touch = e.touches[0];
         dragCurrent.x = touch.clientX - rect.left;
         dragCurrent.y = touch.clientY - rect.top;
-        let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
-        let len = Math.sqrt(dx * dx + dy * dy);
-        gauge = Math.min(len, gaugeMax);
-        gaugeRatio = gauge / gaugeMax;
-        gaugeSuccess = gaugeRatio > 0.8;
-        updateGaugeBar(gaugeRatio, gaugeSuccess);
     }
 }, { passive: false });
 
@@ -403,10 +319,7 @@ canvas.addEventListener("touchend", (e) => {
         activeChar.vx = -Math.cos(angle) * SPEED;
         activeChar.vy = -Math.sin(angle) * SPEED;
         activeChar.moving = true;
-        activeChar.gaugeSuccess = gaugeSuccess;
         dragging = false;
-        gaugeShow = false;
-        updateGaugeBar(0, false);
     }
 }, { passive: false });
 
@@ -421,4 +334,3 @@ function resetGame() {
 }
 resetGame();
 loop();
-
