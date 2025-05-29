@@ -60,7 +60,7 @@ canvas {
     width: 0%;
     background: linear-gradient(90deg, #ff8a65 0%, #ffd600 100%);
     border-radius: 7px;
-    transition: width 0.1s;
+    transition: width 0.08s;
 }
 
 #gaugeText {
@@ -69,17 +69,15 @@ canvas {
     color: #ff5722;
 }
 
-button {
-    padding: 8px 20px;
-    border-radius: 7px;
-    border: none;
-    background: #4caf50;
-    color: #fff;
-    font-size: 16px;
-    margin-top: 8px;
-    cursor: pointer;
+/* NEXT TURN表示 */
+#nextTurnMsg {
+    font-size: 2.2em;
+    font-weight: bold;
+    color: #ff5722;
+    position: absolute;
+    left: 0; right: 0; top: 55%; z-index: 10;
+    pointer-events: none;
+    text-shadow: 2px 2px 7px #fff, 1px 1px 0 #ffd600;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
-button:hover {
-    background: #2e7d32;
-}
-
