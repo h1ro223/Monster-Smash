@@ -4,26 +4,25 @@ const enemyHpElem = document.getElementById('enemyHpVal');
 const turnInfoElem = document.getElementById('turnInfo');
 const gaugeBar = document.getElementById('gaugeBar');
 const gaugeText = document.getElementById('gaugeText');
+const nextTurnMsg = document.getElementById('nextTurnMsg');
 
 const WIDTH = canvas.width, HEIGHT = canvas.height;
 
-// ---- パラメータ ----
-const CHAR_RADIUS = 32; // サイズUP!
+const CHAR_RADIUS = 32;
 const ENEMY_RADIUS = 40;
-const CHAR_COLORS = ["#f44336", "#2196f3", "#43a047", "#ffd600"]; // 赤,青,緑,黄　
+const CHAR_COLORS = ["#f44336", "#2196f3", "#43a047", "#ffd600"];
 const CHAR_NAMES = ["1P", "2P", "3P", "4P"];
 const CHAR_START_Y = HEIGHT - 75;
 const CHAR_SPACING = 66;
 const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 1.5);
-const SPEED = 9.5; // スピード固定値
+const SPEED = 9.5;
+const gaugeMax = 120; // ゲージ最大距離
 
 let chars, enemy, turn, dragging, dragStart, dragCurrent, activeChar, effectTimers, comboFlags;
-let gauge = 0, gaugeRatio = 0, gaugeMax = 120; // ゲージパラメータ
-let gaugeSuccess = false;
-
+let gauge = 0, gaugeRatio = 0, gaugeSuccess = false, gaugeShow = false;
+let nextTurnShow = false, nextTurnTimer = 0;
 
 function initGame() {
-    // 横並び配置
     chars = [];
     for (let i = 0; i < 4; i++) {
         chars.push({
@@ -53,8 +52,12 @@ function initGame() {
     gauge = 0;
     gaugeRatio = 0;
     gaugeSuccess = false;
+    gaugeShow = false;
+    nextTurnShow = false;
+    nextTurnTimer = 0;
     updateDisplay();
     updateGaugeBar(0, false);
+    showNextTurnMsg(false);
 }
 
 function updateDisplay() {
@@ -63,7 +66,6 @@ function updateDisplay() {
         `<span style="color:${activeChar.color};font-size:1.3em;">${activeChar.name}</span>のターン`;
 }
 
-// ---- ゲージバーの更新 ----
 function updateGaugeBar(ratio, isSuccess) {
     ratio = Math.max(0, Math.min(1, ratio));
     gaugeBar.style.width = (ratio * 100).toFixed(1) + '%';
@@ -72,13 +74,23 @@ function updateGaugeBar(ratio, isSuccess) {
     gaugeBar.style.background = isSuccess
         ? "linear-gradient(90deg,#81c784,#ffd600 100%)"
         : "linear-gradient(90deg, #ff8a65 0%, #ffd600 100%)";
+    // 表示/非表示
+    document.getElementById("gaugeArea").style.opacity = gaugeShow ? 1 : 0.35;
 }
 
-// ---- 描画 ----
+function showNextTurnMsg(show) {
+    if (show) {
+        nextTurnMsg.style.opacity = 1;
+        nextTurnMsg.textContent = "NEXT TURN!";
+    } else {
+        nextTurnMsg.style.opacity = 0;
+        nextTurnMsg.textContent = "";
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-    // 枠
     ctx.save();
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#1565c0";
@@ -123,7 +135,6 @@ function draw() {
         ctx.fillStyle = "#fff";
         ctx.textAlign = "center";
         ctx.fillText(c.name, c.x, c.y + 7);
-        // 操作中なら白縁
         if (turn === i) {
             ctx.save();
             ctx.lineWidth = 6;
@@ -135,9 +146,8 @@ function draw() {
         }
     }
 
-    // 矢印ガイド（モンスト風）
+    // モンスト風矢印ガイド
     if (dragging) {
-        // 線
         ctx.save();
         ctx.setLineDash([8, 10]);
         ctx.beginPath();
@@ -173,10 +183,7 @@ function draw() {
         ctx.restore();
     }
 
-    // 友情エフェクト
-    for (let e of effectTimers) {
-        drawEffect(e);
-    }
+    for (let e of effectTimers) drawEffect(e);
 }
 
 function drawEffect(e) {
@@ -220,9 +227,7 @@ function drawEffect(e) {
     ctx.restore();
 }
 
-// ---- ゲームロジック ----
 function update() {
-    // キャラ移動
     for (let c of chars) {
         c.x += c.vx;
         c.y += c.vy;
@@ -238,21 +243,20 @@ function update() {
         c.moving = Math.abs(c.vx) > 0.18 || Math.abs(c.vy) > 0.18;
     }
 
-    // --- 敵ヒット ---
+    // 敵ヒット
     for (let c of chars) {
         if (enemy.hp > 0 && dist(c, enemy) < CHAR_RADIUS + ENEMY_RADIUS) {
             let dmg = c.gaugeSuccess ? 2 : 1;
             enemy.hp -= dmg;
             if (enemy.hp < 0) enemy.hp = 0;
             updateDisplay();
-            // 敵を弾く（小さい反動）
             let angle = Math.atan2(enemy.y - c.y, enemy.x - c.x);
             c.vx += -Math.cos(angle) * 3;
             c.vy += -Math.sin(angle) * 3;
-            c.gaugeSuccess = false; // ダメージ増加は1回のみ
+            c.gaugeSuccess = false;
         }
     }
-    // --- キャラ同士の友情 ---
+    // キャラ同士友情
     for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
         if (i === j) continue;
         let a = chars[i], b = chars[j];
@@ -269,17 +273,31 @@ function update() {
 
     // ターン終了判定
     if (!dragging && !chars[turn].moving && Math.abs(chars[turn].vx) < 0.18 && Math.abs(chars[turn].vy) < 0.18) {
-        nextTurn();
+        if (!nextTurnShow) {
+            nextTurnShow = true;
+            nextTurnTimer = 36; // 0.6秒くらい
+            showNextTurnMsg(true);
+        }
+    }
+    // NEXT TURN表示
+    if (nextTurnShow) {
+        nextTurnTimer--;
+        if (nextTurnTimer <= 0) {
+            showNextTurnMsg(false);
+            nextTurnShow = false;
+            doNextTurn();
+        }
     }
 }
 
-function nextTurn() {
+function doNextTurn() {
     for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) comboFlags[i][j] = false;
     turn = (turn + 1) % 4;
     activeChar = chars[turn];
     gauge = 0;
     gaugeRatio = 0;
     gaugeSuccess = false;
+    gaugeShow = false;
     updateDisplay();
     updateGaugeBar(0, false);
 }
@@ -307,29 +325,26 @@ function triggerFriendCombo(attackerIdx, targetIdx, a, b) {
     }
 }
 
-// ---- 物理演算ヘルパー ----
 function dist(a, b) {
     let dx = a.x - b.x, dy = a.y - b.y;
     return Math.hypot(dx, dy);
 }
 
-// ---- 入力処理 ----
+// -- 入力：盤面のどこからでもドラッグ開始OK、常にactiveCharだけ --
 canvas.addEventListener("mousedown", (e) => {
-    if (dragging || activeChar.moving) return;
+    if (dragging || activeChar.moving || nextTurnShow) return;
     const rect = canvas.getBoundingClientRect();
     dragging = true;
-    dragStart = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
+    dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     dragCurrent = { ...dragStart };
+    gaugeShow = true;
 });
 canvas.addEventListener("mousemove", (e) => {
     if (dragging) {
         const rect = canvas.getBoundingClientRect();
         dragCurrent.x = e.clientX - rect.left;
         dragCurrent.y = e.clientY - rect.top;
-        // ゲージ計算
+        // gauge: キャラ中心→今の位置までの距離
         let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
         let len = Math.sqrt(dx * dx + dy * dy);
         gauge = Math.min(len, gaugeMax);
@@ -340,32 +355,28 @@ canvas.addEventListener("mousemove", (e) => {
 });
 canvas.addEventListener("mouseup", (e) => {
     if (dragging) {
-        // 発射処理
         let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
-        let len = Math.sqrt(dx * dx + dy * dy);
         let angle = Math.atan2(dy, dx);
-        // 引っ張る方向（反対向き）
         activeChar.vx = -Math.cos(angle) * SPEED;
         activeChar.vy = -Math.sin(angle) * SPEED;
         activeChar.moving = true;
         activeChar.gaugeSuccess = gaugeSuccess;
         dragging = false;
+        gaugeShow = false;
         updateGaugeBar(0, false);
     }
 });
 
-// スマホ: スクロール防止＋どこでもドラッグ可
+// タッチ
 canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
-    if (dragging || activeChar.moving) return;
+    if (dragging || activeChar.moving || nextTurnShow) return;
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     dragging = true;
-    dragStart = {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top
-    };
+    dragStart = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
     dragCurrent = { ...dragStart };
+    gaugeShow = true;
 }, { passive: false });
 
 canvas.addEventListener("touchmove", (e) => {
@@ -388,25 +399,23 @@ canvas.addEventListener("touchend", (e) => {
     e.preventDefault();
     if (dragging) {
         let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
-        let len = Math.sqrt(dx * dx + dy * dy);
         let angle = Math.atan2(dy, dx);
         activeChar.vx = -Math.cos(angle) * SPEED;
         activeChar.vy = -Math.sin(angle) * SPEED;
         activeChar.moving = true;
         activeChar.gaugeSuccess = gaugeSuccess;
         dragging = false;
+        gaugeShow = false;
         updateGaugeBar(0, false);
     }
 }, { passive: false });
 
-// ---- ゲームループ ----
 function loop() {
     update();
     draw();
     requestAnimationFrame(loop);
 }
 
-// ---- リセット ----
 function resetGame() {
     initGame();
 }
