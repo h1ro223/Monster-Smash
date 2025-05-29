@@ -3,19 +3,17 @@ const ctx = canvas.getContext('2d');
 const turnInfoElem = document.getElementById('turnInfo');
 const WIDTH = canvas.width, HEIGHT = canvas.height;
 
-// --- パラメータ ---
-const CHAR_RADIUS = 22; // 直径44px（以前の大きさ）
-const ENEMY_RADIUS = 36; // 敵サイズも少しだけ縮小
+const CHAR_RADIUS = 22;
+const ENEMY_RADIUS = 36;
 const CHAR_COLORS = ["#f44336", "#2196f3"];
 const CHAR_NAMES = ["1P", "2P"];
 const CHAR_START_Y = HEIGHT - 68;
 const CHAR_SPACING = 64;
-const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 0.5); // 2体用
-const SPEED = 9.5;
+const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 0.5);
+const SPEED = 12;  // ←ここをさらに速くしました
 
 let chars, enemy, turn, dragging, dragStart, dragCurrent, activeChar, effectTimers, comboFlags;
 
-// --- ゲーム初期化 ---
 function initGame() {
     chars = [];
     for (let i = 0; i < 2; i++) {
@@ -25,8 +23,7 @@ function initGame() {
             vx: 0, vy: 0,
             color: CHAR_COLORS[i],
             name: CHAR_NAMES[i],
-            moving: false,
-            gaugeSuccess: false // 名残
+            moving: false
         });
     }
     enemy = {
@@ -51,7 +48,6 @@ function updateDisplay() {
         `<span style="color:${activeChar.color};font-size:1.1em;">${activeChar.name}</span>のターン`;
 }
 
-// --- 描画 ---
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
@@ -120,38 +116,42 @@ function draw() {
         }
     }
 
-    // --- 引っ張り線（ガイド） ---
+    // --- 引っ張り線（モンスト風の大きめ矢印表示） ---
     if (dragging) {
         ctx.save();
-        ctx.setLineDash([8, 9]);
+        // 破線の太い線
+        ctx.setLineDash([10, 11]);
         ctx.beginPath();
         ctx.moveTo(activeChar.x, activeChar.y);
         ctx.lineTo(dragCurrent.x, dragCurrent.y);
         ctx.strokeStyle = "#ff7043";
-        ctx.lineWidth = 4;
-        ctx.globalAlpha = 0.85;
+        ctx.lineWidth = 7;
+        ctx.globalAlpha = 0.90;
         ctx.stroke();
         ctx.setLineDash([]);
-        // 矢印先端
+
+        // 矢印先端（大きめ三角形）
         let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
         let len = Math.sqrt(dx*dx + dy*dy);
         let unitX = dx / (len || 1), unitY = dy / (len || 1);
-        let arrowSize = 13;
-        let tipX = activeChar.x + unitX * Math.min(len, 90);
-        let tipY = activeChar.y + unitY * Math.min(len, 90);
+        // 最大矢印長さは90に
+        let arrowLen = Math.min(len, 90);
+        let tipX = activeChar.x + unitX * arrowLen;
+        let tipY = activeChar.y + unitY * arrowLen;
+        let arrowSize = 21;
         ctx.beginPath();
         ctx.moveTo(tipX, tipY);
         ctx.lineTo(
-            tipX - unitX * arrowSize + unitY * arrowSize * 0.5,
-            tipY - unitY * arrowSize - unitX * arrowSize * 0.5
+            tipX - unitX * arrowSize + unitY * arrowSize * 0.6,
+            tipY - unitY * arrowSize - unitX * arrowSize * 0.6
         );
         ctx.lineTo(
-            tipX - unitX * arrowSize - unitY * arrowSize * 0.5,
-            tipY - unitY * arrowSize + unitX * arrowSize * 0.5
+            tipX - unitX * arrowSize - unitY * arrowSize * 0.6,
+            tipY - unitY * arrowSize + unitX * arrowSize * 0.6
         );
         ctx.closePath();
         ctx.fillStyle = "#ff7043";
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = 0.90;
         ctx.fill();
         ctx.globalAlpha = 1.0;
         ctx.restore();
@@ -244,7 +244,6 @@ function doNextTurn() {
 }
 
 function triggerFriendCombo(attackerIdx, targetIdx, a, b) {
-    // 1P: 十字レーザー, 2P: クロスレーザー
     if (targetIdx === 0) {
         effectTimers.push({ type: "cross", x: b.x, y: b.y, timer: 14 });
     } else if (targetIdx === 1) {
@@ -257,7 +256,7 @@ function dist(a, b) {
     return Math.hypot(dx, dy);
 }
 
-// 入力：操作キャラ上からのみドラッグ開始OK
+// 操作キャラ上からのみドラッグ開始OK
 canvas.addEventListener("mousedown", (e) => {
     if (dragging || activeChar.moving) return;
     const rect = canvas.getBoundingClientRect();
