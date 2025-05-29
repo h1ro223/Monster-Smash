@@ -10,7 +10,7 @@ const CHAR_NAMES = ["1P", "2P"];
 const CHAR_START_Y = HEIGHT - 68;
 const CHAR_SPACING = 64;
 const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 0.5);
-const SPEED = 20;  // スピード20
+const SPEED = 200;  // スピード20
 
 const enemyFaceImg = new Image();
 enemyFaceImg.src = "face.png";
