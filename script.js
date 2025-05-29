@@ -89,6 +89,23 @@ function draw() {
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
     ctx.fillText("ENEMY", enemy.x, enemy.y + 6);
+    
+    // 敵の顔画像を描画（画像が読み込まれていれば）
+    if (enemyFaceImg.complete && enemyFaceImg.naturalWidth > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, enemy.r - 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip(); // 丸く切り抜き
+    ctx.drawImage(
+        enemyFaceImg,
+        enemy.x - (enemy.r - 2),
+        enemy.y - (enemy.r - 2),
+        (enemy.r - 2) * 2,
+        (enemy.r - 2) * 2
+    );
+    ctx.restore();
+}
 
     // --- キャラ ---
     for (let i = 0; i < 2; i++) {
