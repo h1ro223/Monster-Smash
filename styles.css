@@ -5,79 +5,50 @@ body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
+    font-size: 15px;
 }
 
 h1 {
-    margin: 16px 0 4px 0;
-    font-size: 1.1em;
-}
-
-#enemyHP {
-    font-size: 1.1em;
-    margin-bottom: 2px;
+    margin: 10px 0 2px 0;
+    font-size: 1.0em;
+    letter-spacing: 1px;
 }
 
 #turnInfo {
-    font-size: 1.2em;
+    font-size: 1.06em;
     font-weight: bold;
-    margin-bottom: 0;
+    margin-bottom: 4px;
     color: #1976d2;
     letter-spacing: 2px;
 }
 
 canvas {
     background: #f4f4f4;
-    margin: 12px auto 10px auto;
+    margin: 8px auto 8px auto;
     display: block;
-    border-radius: 18px;
-    box-shadow: 0 4px 16px #bbb;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px #bbb;
     touch-action: none;
+    border: none;
 }
 
-#gaugeArea {
-    width: 80%;
-    margin: 0 auto 6px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    font-size: 1em;
+.desc {
+    font-size: 0.95em;
+    margin-top: 2px;
+    margin-bottom: 7px;
+    color: #333;
 }
 
-#gaugeBarBg {
-    width: 130px;
-    height: 14px;
-    background: #e0e0e0;
+button {
+    padding: 6px 18px;
     border-radius: 7px;
-    overflow: hidden;
-    margin: 0 6px;
-    border: 1px solid #bbb;
-    display: inline-block;
+    border: none;
+    background: #4caf50;
+    color: #fff;
+    font-size: 15px;
+    margin-top: 3px;
+    cursor: pointer;
 }
-
-#gaugeBar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #ff8a65 0%, #ffd600 100%);
-    border-radius: 7px;
-    transition: width 0.08s;
-}
-
-#gaugeText {
-    min-width: 42px;
-    font-weight: bold;
-    color: #ff5722;
-}
-
-/* NEXT TURN表示 */
-#nextTurnMsg {
-    font-size: 2.2em;
-    font-weight: bold;
-    color: #ff5722;
-    position: absolute;
-    left: 0; right: 0; top: 55%; z-index: 10;
-    pointer-events: none;
-    text-shadow: 2px 2px 7px #fff, 1px 1px 0 #ffd600;
-    opacity: 0;
-    transition: opacity 0.2s;
+button:hover {
+    background: #2e7d32;
 }
