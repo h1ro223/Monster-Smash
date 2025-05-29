@@ -10,7 +10,7 @@ const CHAR_NAMES = ["1P", "2P"];
 const CHAR_START_Y = HEIGHT - 68;
 const CHAR_SPACING = 64;
 const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 0.5);
-const SPEED = 12;  // ←ここをさらに速くしました
+const SPEED = 20;  // スピード20
 
 let chars, enemy, turn, dragging, dragStart, dragCurrent, activeChar, effectTimers, comboFlags;
 
@@ -104,7 +104,6 @@ function draw() {
         ctx.fillStyle = "#fff";
         ctx.textAlign = "center";
         ctx.fillText(c.name, c.x, c.y + 5);
-        // 操作中キャラに白縁
         if (turn === i) {
             ctx.save();
             ctx.lineWidth = 5;
@@ -116,10 +115,9 @@ function draw() {
         }
     }
 
-    // --- 引っ張り線（モンスト風の大きめ矢印表示） ---
+    // --- 引っ張り線（大きめ矢印） ---
     if (dragging) {
         ctx.save();
-        // 破線の太い線
         ctx.setLineDash([10, 11]);
         ctx.beginPath();
         ctx.moveTo(activeChar.x, activeChar.y);
@@ -134,7 +132,6 @@ function draw() {
         let dx = dragCurrent.x - activeChar.x, dy = dragCurrent.y - activeChar.y;
         let len = Math.sqrt(dx*dx + dy*dy);
         let unitX = dx / (len || 1), unitY = dy / (len || 1);
-        // 最大矢印長さは90に
         let arrowLen = Math.min(len, 90);
         let tipX = activeChar.x + unitX * arrowLen;
         let tipY = activeChar.y + unitY * arrowLen;
@@ -161,28 +158,36 @@ function draw() {
     for (let e of effectTimers) drawEffect(e);
 }
 
+// クロスレーザー（画面いっぱい）
 function drawEffect(e) {
     ctx.save();
-    if (e.type === "cross") {
-        ctx.strokeStyle = "#e3f2fd";
-        ctx.lineWidth = 9;
-        for (let d of [[1,0], [-1,0], [0,1], [0,-1]]) {
-            ctx.beginPath();
-            ctx.moveTo(e.x, e.y);
-            ctx.lineTo(e.x + d[0] * 140, e.y + d[1] * 140);
-            ctx.globalAlpha = e.timer / 14;
-            ctx.stroke();
-        }
-    } else if (e.type === "xlaser") {
+    if (e.type === "xlaser") {
         ctx.strokeStyle = "#c8e6c9";
-        ctx.lineWidth = 7;
-        for (let d of [[1,1], [-1,1], [1,-1], [-1,-1]]) {
+        ctx.lineWidth = 13;
+        ctx.globalAlpha = e.timer / 16;
+        const diagonals = [
+            Math.atan2(-HEIGHT, WIDTH),  // ↗
+            Math.atan2(HEIGHT, WIDTH),   // ↘
+            Math.atan2(-HEIGHT, -WIDTH), // ↖
+            Math.atan2(HEIGHT, -WIDTH)   // ↙
+        ];
+        diagonals.forEach(angle => {
             ctx.beginPath();
             ctx.moveTo(e.x, e.y);
-            ctx.lineTo(e.x + d[0] * 105, e.y + d[1] * 105);
-            ctx.globalAlpha = e.timer / 14;
+            // 画面端まで伸ばす
+            let maxLen = Math.max(WIDTH, HEIGHT) * 1.5;
+            let endX = e.x + Math.cos(angle) * maxLen;
+            let endY = e.y + Math.sin(angle) * maxLen;
+            ctx.lineTo(endX, endY);
             ctx.stroke();
-        }
+        });
+    } else if (e.type === "speed") {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, CHAR_RADIUS + 22 * Math.random(), 0, Math.PI * 2);
+        ctx.strokeStyle = "#ffb300";
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = e.timer / 16 * 0.8;
+        ctx.stroke();
     }
     ctx.restore();
 }
@@ -243,11 +248,15 @@ function doNextTurn() {
     updateDisplay();
 }
 
+// 友情仕様変更（1Pクロスレーザー, 2Pスピードアップ）
 function triggerFriendCombo(attackerIdx, targetIdx, a, b) {
     if (targetIdx === 0) {
-        effectTimers.push({ type: "cross", x: b.x, y: b.y, timer: 14 });
+        effectTimers.push({ type: "xlaser", x: b.x, y: b.y, timer: 16 }); // クロスレーザー
     } else if (targetIdx === 1) {
-        effectTimers.push({ type: "xlaser", x: b.x, y: b.y, timer: 14 });
+        effectTimers.push({ type: "speed", x: b.x, y: b.y, timer: 16 }); // スピードアップ
+        // 当たった時1.5倍で再加速
+        b.vx *= 1.5;
+        b.vy *= 1.5;
     }
 }
 
