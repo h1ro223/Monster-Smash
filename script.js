@@ -10,27 +10,25 @@ const ENEMY_RADIUS = 40;
 const CHAR_COLORS = ["#f44336", "#2196f3", "#43a047", "#ffd600"]; // 赤,青,緑,黄
 const CHAR_NAMES = ["1P", "2P", "3P", "4P"];
 
-// キャラ初期座標
-const CHAR_START_POS = [
-    { x: WIDTH / 2 - 60, y: HEIGHT - 90 },
-    { x: WIDTH / 2 + 60, y: HEIGHT - 90 },
-    { x: WIDTH / 2 - 60, y: HEIGHT - 170 },
-    { x: WIDTH / 2 + 60, y: HEIGHT - 170 }
-];
+// 横並び配置（モンスト風）
+const CHAR_START_Y = HEIGHT - 70;
+const CHAR_SPACING = 70;
+const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 1.5);
 
 let chars, enemy, turn, dragging, dragStart, activeChar, effectTimers, comboFlags;
 
 function initGame() {
-    // キャラ配列
+    // キャラ配列を横一列で並べる
     chars = [];
     for (let i = 0; i < 4; i++) {
         chars.push({
-            x: CHAR_START_POS[i].x,
-            y: CHAR_START_POS[i].y,
+            x: CHAR_CENTER_X + CHAR_SPACING * i,
+            y: CHAR_START_Y,
             vx: 0, vy: 0,
             color: CHAR_COLORS[i],
             name: CHAR_NAMES[i],
             comboUsed: [false, false, false, false], // 1回のみ
+            moving: false
         });
     }
     // 敵
@@ -58,6 +56,13 @@ function updateDisplay() {
 // ---- 描画 ----
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    // --- 枠表示（外枠線） ---
+    ctx.save();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#1565c0";
+    ctx.strokeRect(2.5, 2.5, WIDTH - 5, HEIGHT - 5);
+    ctx.restore();
 
     // --- 敵 ---
     // HPバー
@@ -99,6 +104,16 @@ function draw() {
         ctx.fillStyle = "#fff";
         ctx.textAlign = "center";
         ctx.fillText(c.name, c.x, c.y + 6);
+        // 操作中なら白縁
+        if (turn === i) {
+            ctx.save();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#fffde7";
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, CHAR_RADIUS + 4, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
     }
 
     // --- 引っ張り線 ---
@@ -118,10 +133,8 @@ function draw() {
 }
 
 function drawEffect(e) {
-    // type: "cross" | "xlaser" | "speed" | "homing"
     ctx.save();
     if (e.type === "cross") {
-        // 十字レーザー
         ctx.strokeStyle = "#e3f2fd";
         ctx.lineWidth = 8;
         for (let d of [[1,0], [-1,0], [0,1], [0,-1]]) {
@@ -132,7 +145,6 @@ function drawEffect(e) {
             ctx.stroke();
         }
     } else if (e.type === "xlaser") {
-        // クロスレーザー
         ctx.strokeStyle = "#c8e6c9";
         ctx.lineWidth = 7;
         for (let d of [[1,1], [-1,1], [1,-1], [-1,-1]]) {
@@ -143,7 +155,6 @@ function drawEffect(e) {
             ctx.stroke();
         }
     } else if (e.type === "homing") {
-        // 敵へレーザー
         ctx.strokeStyle = "#fff59d";
         ctx.lineWidth = 11;
         ctx.beginPath();
@@ -152,7 +163,6 @@ function drawEffect(e) {
         ctx.globalAlpha = e.timer / 18;
         ctx.stroke();
     } else if (e.type === "speed") {
-        // スピードアップエフェクト
         ctx.beginPath();
         ctx.arc(e.x, e.y, CHAR_RADIUS + 12 * Math.random(), 0, Math.PI * 2);
         ctx.strokeStyle = "#ffb300";
@@ -181,6 +191,8 @@ function update() {
         if (Math.abs(c.vx) < 0.15 && Math.abs(c.vy) < 0.15) {
             c.vx = c.vy = 0;
         }
+        // moving判定
+        c.moving = Math.abs(c.vx) > 0.18 || Math.abs(c.vy) > 0.18;
     }
 
     // --- 敵ヒット ---
@@ -230,15 +242,12 @@ function nextTurn() {
 
 // ---- 友情コンボ処理 ----
 function triggerFriendCombo(attackerIdx, targetIdx, a, b) {
-    // 友情効果はターゲットの色による
     switch (targetIdx) {
         case 0: // 1P 十字レーザー
             effectTimers.push({ type: "cross", x: b.x, y: b.y, timer: 18 });
-            // エフェクト用のみ
             break;
         case 1: // 2P スピードアップ
             effectTimers.push({ type: "speed", x: b.x, y: b.y, timer: 18 });
-            // 当たったキャラのスピードアップ
             a.vx *= 1.35;
             a.vy *= 1.35;
             break;
@@ -247,7 +256,6 @@ function triggerFriendCombo(attackerIdx, targetIdx, a, b) {
             break;
         case 3: // 4P 敵に向かってレーザー
             effectTimers.push({ type: "homing", x: b.x, y: b.y, timer: 18 });
-            // 当たった瞬間に敵にダメージ
             if (enemy.hp > 0) {
                 enemy.hp--;
                 updateDisplay();
@@ -289,8 +297,10 @@ canvas.addEventListener("mouseup", (e) => {
         dragging = false;
     }
 });
-// スマホ対応
+
+// --- スマホ: スクロール防止 + ターンキャラ以外選択防止 ---
 canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
     if (dragging || activeChar.moving) return;
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
@@ -300,16 +310,20 @@ canvas.addEventListener("touchstart", (e) => {
         dragging = true;
         dragStart = { x: mx, y: my };
     }
-});
+}, { passive: false });
+
 canvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();
     if (dragging) {
         const rect = canvas.getBoundingClientRect();
         const touch = e.touches[0];
         dragStart.x = touch.clientX - rect.left;
         dragStart.y = touch.clientY - rect.top;
     }
-});
+}, { passive: false });
+
 canvas.addEventListener("touchend", (e) => {
+    e.preventDefault();
     if (dragging) {
         const dx = dragStart.x - activeChar.x, dy = dragStart.y - activeChar.y;
         activeChar.vx = -dx * 0.18;
@@ -317,7 +331,7 @@ canvas.addEventListener("touchend", (e) => {
         activeChar.moving = true;
         dragging = false;
     }
-});
+}, { passive: false });
 
 // ---- ゲームループ ----
 function loop() {
