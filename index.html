@@ -2,16 +2,23 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>モンスト風 多キャラ友情シミュレーション</title>
+    <title>モンスト シミュレーション</title>
     <meta name="viewport" content="width=360,initial-scale=1,user-scalable=no">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>モンスト風 多キャラ友情シミュレーション</h1>
-    <div id="enemyHP">敵HP: <span id="enemyHpVal">15</span> / 15</div>
+    <h1>モンスト シミュレーション</h1>
+    <div id="enemyHP">敵HP: <span id="enemyHpVal">50</span> / 50</div>
     <div id="turnInfo"></div>
     <canvas id="gameCanvas" width="360" height="640"></canvas>
-    <p>キャラを順番に引っ張って発射！<br>他のキャラや敵に当てて友情コンボも発動！</p>
+    <div id="gaugeArea">
+        <span id="gaugeLabel">ショットゲージ：</span>
+        <div id="gaugeBarBg">
+            <div id="gaugeBar"></div>
+        </div>
+        <span id="gaugeText"></span>
+    </div>
+    <p>どこからでも引っ張ってショット！ゲージ8割以上でダメージ2倍</p>
     <button onclick="resetGame()">リセット</button>
     <script src="script.js"></script>
 </body>
