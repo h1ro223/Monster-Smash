@@ -44,3 +44,13 @@ button {
 button:hover {
     background: #2e7d32;
 }
+
+canvas {
+    background: #f4f4f4;
+    margin: 12px auto 10px auto;
+    display: block;
+    border-radius: 18px;
+    box-shadow: 0 4px 16px #bbb;
+    touch-action: none;
+    border: none;
+}
