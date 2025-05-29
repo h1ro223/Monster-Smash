@@ -2,24 +2,15 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>モンスト</title>
-    <meta name="viewport" content="width=360,initial-scale=1,user-scalable=no">
+    <title>モンスト風シミュレーター</title>
+    <meta name="viewport" content="width=320,initial-scale=1,user-scalable=no">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>モンスト</h1>
-    <div id="enemyHP">敵HP: <span id="enemyHpVal">50</span> / 50</div>
+    <h1>モンスト風シミュレーター</h1>
     <div id="turnInfo"></div>
-    <canvas id="gameCanvas" width="360" height="640"></canvas>
-    <div id="gaugeArea">
-        <span id="gaugeLabel">ショットゲージ：</span>
-        <div id="gaugeBarBg">
-            <div id="gaugeBar"></div>
-        </div>
-        <span id="gaugeText"></span>
-    </div>
-    <div id="nextTurnMsg"></div>
-    <p>どこからでも引っ張ってショット！ゲージ8割以上でダメージ2倍</p>
+    <canvas id="gameCanvas" width="320" height="540"></canvas>
+    <p class="desc">キャラを順番に引っ張ってショット！敵のHPゲージは本体下部に表示されます。</p>
     <button onclick="resetGame()">リセット</button>
     <script src="script.js"></script>
 </body>
