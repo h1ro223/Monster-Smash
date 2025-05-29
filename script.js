@@ -10,7 +10,7 @@ const WIDTH = canvas.width, HEIGHT = canvas.height;
 // ---- パラメータ ----
 const CHAR_RADIUS = 32; // サイズUP!
 const ENEMY_RADIUS = 40;
-const CHAR_COLORS = ["#f44336", "#2196f3", "#43a047", "#ffd600"]; // 赤,青,緑,黄
+const CHAR_COLORS = ["#f44336", "#2196f3", "#43a047", "#ffd600"]; // 赤,青,緑,黄　
 const CHAR_NAMES = ["1P", "2P", "3P", "4P"];
 const CHAR_START_Y = HEIGHT - 75;
 const CHAR_SPACING = 66;
