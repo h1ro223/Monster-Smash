@@ -12,6 +12,9 @@ const CHAR_SPACING = 64;
 const CHAR_CENTER_X = WIDTH / 2 - (CHAR_SPACING * 0.5);
 const SPEED = 20;  // スピード20
 
+const enemyFaceImg = new Image();
+enemyFaceImg.src = "face.PNG";
+
 let chars, enemy, turn, dragging, dragStart, dragCurrent, activeChar, effectTimers, comboFlags;
 
 function initGame() {
