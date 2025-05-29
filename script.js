@@ -21,6 +21,7 @@ let chars, enemy, turn, dragging, dragStart, dragCurrent, activeChar, effectTime
 let gauge = 0, gaugeRatio = 0, gaugeMax = 120; // ゲージパラメータ
 let gaugeSuccess = false;
 
+
 function initGame() {
     // 横並び配置
     chars = [];
