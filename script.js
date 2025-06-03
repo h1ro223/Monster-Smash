@@ -21,7 +21,7 @@ const CHAR_NAMES = ["1P", "2P", "3P", "4P"];
 const DRAG_RADIUS = CHAR_RADIUS + 18;
 
 // ---- 状態管理 ----
-let state = "WAIT"; // "WAIT", "PLAYER_TURN", "ENEMY_TURN", "WIN", "LOSE"
+let state = "PLAYER_TURN"; // "PLAYER_TURN", "ENEMY_ATTACK", "WIN", "LOSE"
 let currentPlayer = 0;
 let players = [];
 let enemy = {};
@@ -193,7 +193,7 @@ function draw(){
 }
 
 function drawEffect(e){
-    // ここに友情・攻撃エフェクト処理（省略可）
+    // ここに友情・攻撃エフェクト処理（必要に応じて拡張可）
 }
 
 // ---- ゲーム状態進行 ----
@@ -214,55 +214,18 @@ function update() {
     // エフェクト進行
     effectTimers = effectTimers.filter(e => --e.timer > 0);
 
-    // 判定管理
-    if(state==="PLAYER_TURN" && !dragging && !players[currentPlayer].moving && players.every(c=>!c.moving)){
-        // ターン終了
-        playerActionCount++;
-        // 敵攻撃タイミング？
-        if (playerActionCount % ENEMY_ATTACK_INTERVAL === 0) {
-            enemyAttackCountdown = ENEMY_ATTACK_INTERVAL;
-            state = "ENEMY_TURN";
-            setTimeout(enemyAttack, 600);
-        } else {
-            enemyAttackCountdown = ENEMY_ATTACK_INTERVAL-(playerActionCount%ENEMY_ATTACK_INTERVAL);
-            nextPlayerTurn();
-        }
-        setTurnCounter();
-    }
-    // 勝利判定
+    // 勝利・敗北判定
     if(enemy.hp<=0 && state!=="WIN"){
         state = "WIN";
-        alert("勝利！");
+        setTurnCounter();
+        setTimeout(()=>alert("勝利！"), 100);
     }
-    // 敗北判定
     if(players.every(p=>p.hp<=0) && state!=="LOSE"){
         state = "LOSE";
-        alert("全滅しました");
+        setTurnCounter();
+        setTimeout(()=>alert("全滅しました"), 100);
     }
     setHpBar();
-}
-
-function nextPlayerTurn(){
-    for(let i=1;i<=PLAYER_NUM;i++){
-        let idx = (currentPlayer+i)%PLAYER_NUM;
-        if(players[idx].hp>0){
-            currentPlayer=idx;
-            state="PLAYER_TURN";
-            break;
-        }
-    }
-}
-
-function enemyAttack(){
-    // 生存キャラのどれかを狙う
-    let alive = players.filter(c=>c.hp>0);
-    if(!alive.length) return;
-    let target = alive[Math.floor(Math.random()*alive.length)];
-    target.hp = Math.max(0, target.hp-3);
-    state="PLAYER_TURN";
-    nextPlayerTurn();
-    setHpBar();
-    setTurnCounter();
 }
 
 // --- 入力系 ---
@@ -270,7 +233,6 @@ canvas.addEventListener("mousedown",(e)=>{
     if(state!=="PLAYER_TURN") return;
     let c = players[currentPlayer];
     if(c.moving) return;
-    if(!players.every(p=>!p.moving)) return;
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
     const d = Math.hypot(mx-c.x, my-c.y);
@@ -296,6 +258,7 @@ canvas.addEventListener("mouseup",(e)=>{
         c.vy = -Math.sin(angle)*SPEED_DEFAULT;
         c.moving = true;
         dragging = false;
+        handleEndOfTurn();
     }
 });
 // スマホタッチも同じ
@@ -304,7 +267,6 @@ canvas.addEventListener("touchstart",(e)=>{
     if(state!=="PLAYER_TURN") return;
     let c = players[currentPlayer];
     if(c.moving) return;
-    if(!players.every(p=>!p.moving)) return;
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     const mx = touch.clientX - rect.left, my = touch.clientY - rect.top;
@@ -334,8 +296,57 @@ canvas.addEventListener("touchend",(e)=>{
         c.vy = -Math.sin(angle)*SPEED_DEFAULT;
         c.moving = true;
         dragging = false;
+        handleEndOfTurn();
     }
 },{passive:false});
+
+// --- ターン終了処理：ショット発射時だけ呼ばれる！ ---
+function handleEndOfTurn() {
+    playerActionCount++;
+    // 次のキャラが生きているかを探す
+    let next = -1;
+    for (let i = 1; i <= PLAYER_NUM; i++) {
+        let idx = (currentPlayer + i) % PLAYER_NUM;
+        if (players[idx].hp > 0) {
+            next = idx;
+            break;
+        }
+    }
+    // すべて倒れている場合
+    if(next === -1) {
+        state = "LOSE";
+        setTurnCounter();
+        setTimeout(()=>alert("全滅しました"), 100);
+        return;
+    }
+    // 敵攻撃判定
+    if (playerActionCount % ENEMY_ATTACK_INTERVAL === 0) {
+        enemyAttackCountdown = ENEMY_ATTACK_INTERVAL;
+        state = "ENEMY_ATTACK";
+        setTurnCounter();
+        setTimeout(()=>{
+            enemyAttack();
+            currentPlayer = next;
+            state = "PLAYER_TURN";
+            setTurnCounter();
+        }, 600);
+    } else {
+        enemyAttackCountdown = ENEMY_ATTACK_INTERVAL-(playerActionCount%ENEMY_ATTACK_INTERVAL);
+        currentPlayer = next;
+        state = "PLAYER_TURN";
+        setTurnCounter();
+    }
+}
+
+// --- 敵の攻撃処理 ---
+function enemyAttack(){
+    // 生存キャラのどれかを狙う
+    let alive = players.filter(c=>c.hp>0);
+    if(!alive.length) return;
+    let target = alive[Math.floor(Math.random()*alive.length)];
+    target.hp = Math.max(0, target.hp-3);
+    setHpBar();
+}
 
 // ---- HPバー・ターン数UI ----
 function setHpBar(){
@@ -348,8 +359,12 @@ function setHpBar(){
 function setTurnCounter(){
     let counter = document.getElementById('enemyTurnCounter');
     if(counter){
-        if(state==="WIN"||state==="LOSE"){
-            counter.textContent = "";
+        if(state==="WIN"){
+            counter.textContent = "クリア！";
+        }else if(state==="LOSE"){
+            counter.textContent = "全滅…";
+        }else if(state==="ENEMY_ATTACK"){
+            counter.textContent = `敵攻撃中…`;
         }else{
             counter.textContent = `敵攻撃まで: ${enemyAttackCountdown}`;
         }
