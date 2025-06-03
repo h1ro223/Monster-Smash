@@ -1,0 +1,83 @@
+body {
+  background: #fff;
+  color: #222;
+  text-align: center;
+  font-family: 'Segoe UI', 'Meiryo', sans-serif;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+
+h1 {
+  margin: 10px 0 2px 0;
+  font-size: 1.0em;
+  letter-spacing: 1px;
+}
+
+canvas {
+  background: #f4f4f4;
+  margin: 8px auto 8px auto;
+  display: block;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px #bbb;
+  touch-action: none;
+  border: none;
+}
+
+.desc {
+  font-size: 0.95em;
+  margin-top: 2px;
+  margin-bottom: 7px;
+  color: #333;
+}
+
+button {
+  padding: 6px 18px;
+  border-radius: 7px;
+  border: none;
+  background: #4caf50;
+  color: #fff;
+  font-size: 15px;
+  margin-top: 3px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2e7d32;
+}
+
+#result {
+  background: #fff9c4;
+  border: 2px solid #ffeb3b;
+  border-radius: 11px;
+  margin: 16px auto 0 auto;
+  display: inline-block;
+  padding: 18px 28px 14px 28px;
+  font-size: 1.05em;
+  box-shadow: 0 3px 16px #eee;
+  animation: fadein 0.7s;
+}
+
+#result h2 {
+  margin: 0 0 6px 0;
+  color: #d4af37;
+  font-size: 1.2em;
+}
+
+#result span#scoreValue {
+  font-weight: bold;
+  color: #ef5350;
+  font-size: 1.1em;
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>モンスト風シミュレーター</title>
+  <meta name="viewport" content="width=320,initial-scale=1,user-scalable=no">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>モンスト風シミュレーター</h1>
+  <canvas id="gameCanvas" width="320" height="540"></canvas>
+  <p class="desc">キャラを順番に引っ張ってショット！敵のHPは本体下のバーで表示されます。</p>
+  <button onclick="resetGame()">リセット</button>
+  <!-- ↓お好みで勝利演出用（無くても動作可） -->
+  <div id="result" style="display:none;">
+    <h2>勝利！</h2>
+    <p>敵を倒しました！</p>
+    <div>スコア：<span id="scoreValue">0</span></div>
+  </div>
+  <script src="script.js"></script>
+</body>
+
+</html>
