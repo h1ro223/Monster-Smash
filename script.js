@@ -471,6 +471,7 @@ canvas.addEventListener("mousedown", (e) => {
     if (!allCharsStopped()) return;
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    // 今アクティブなキャラしか操作不可！
     const d = Math.hypot(mx - activeChar.x, my - activeChar.y);
     if (d <= CHAR_DRAG_RADIUS) {
         dragging = true;
@@ -502,6 +503,7 @@ canvas.addEventListener("touchstart", (e) => {
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     const mx = touch.clientX - rect.left, my = touch.clientY - rect.top;
+    // アクティブキャラしか触れない
     const d = Math.hypot(mx - activeChar.x, my - activeChar.y);
     if (d <= CHAR_DRAG_RADIUS) {
         dragging = true;
@@ -509,7 +511,6 @@ canvas.addEventListener("touchstart", (e) => {
         dragCurrent = { ...dragStart };
     }
 }, { passive: false });
-
 canvas.addEventListener("touchmove", (e) => {
     e.preventDefault();
     if (dragging) {
@@ -519,7 +520,6 @@ canvas.addEventListener("touchmove", (e) => {
         dragCurrent.y = touch.clientY - rect.top;
     }
 }, { passive: false });
-
 canvas.addEventListener("touchend", (e) => {
     e.preventDefault();
     if (dragging) {
