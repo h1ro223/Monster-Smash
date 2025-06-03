@@ -2,38 +2,22 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>モンスト風シミュレーター 4Pバージョン </title>
+    <title>モンスト風シミュレーター NEW</title>
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>モンスト風シミュレーター</h1>
     <div id="gameArea">
-        <canvas id="gameCanvas" width="420" height="760"></canvas>
-        <!-- 残りターン数表示（敵の近くに配置） -->
+        <canvas id="gameCanvas" width="400" height="720"></canvas>
         <div id="enemyTurnCounter"></div>
-        <!-- 合計HPバー -->
         <div id="totalHpBar">
             <div id="totalHpLabel">HP</div>
             <div id="totalHpGauge"><div id="totalHpInner"></div></div>
             <span id="totalHpText">40 / 40</span>
         </div>
     </div>
-    <button id="btnSetting">⚙️ 設定</button>
     <button onclick="resetGame()">リセット</button>
-    <!-- 設定画面モーダル -->
-    <div id="settingModal" class="modal">
-        <div class="modal-content">
-            <h2>設定</h2>
-            <label>ショットスピード:
-                <input type="number" id="speedInput" min="1" max="1000" value="40">
-            </label><br>
-            <label>減速率:
-                <input type="number" id="frictionInput" min="0.90" max="0.999" step="0.001" value="0.96">
-            </label><br>
-            <button id="settingClose">閉じる</button>
-        </div>
-    </div>
     <script src="script.js"></script>
 </body>
 </html>
