@@ -29,8 +29,8 @@ let dragging = false, dragStart = {x:0,y:0}, dragCurrent = {x:0,y:0};
 let effectTimers = [];
 let playerActionCount = 0;
 let enemyAttackCountdown = ENEMY_ATTACK_INTERVAL;
+let friendFlags = []; // 友情誘発フラグ
 
-// ---- イニシャライズ ----
 function resetGame() {
     players = [];
     for(let i=0;i<PLAYER_NUM;i++){
@@ -50,6 +50,7 @@ function resetGame() {
     playerActionCount = 0;
     currentPlayer = 0;
     enemyAttackCountdown = ENEMY_ATTACK_INTERVAL;
+    friendFlags = Array(PLAYER_NUM).fill(null).map(() => Array(PLAYER_NUM).fill(false));
     setHpBar();
     setTurnCounter();
     state = "PLAYER_TURN";
@@ -58,7 +59,6 @@ function resetGame() {
 resetGame();
 requestAnimationFrame(loop);
 
-// ---- 描画ループ ----
 function loop() {
     update();
     draw();
@@ -193,10 +193,71 @@ function draw(){
 }
 
 function drawEffect(e){
-    // ここに友情・攻撃エフェクト処理（必要に応じて拡張可）
+    ctx.save();
+    if (e.type === "xlaser") {
+        ctx.strokeStyle = "#ffe082";
+        ctx.lineWidth = 19;
+        ctx.globalAlpha = e.timer / 16;
+        const diagonals = [
+            Math.atan2(-HEIGHT, WIDTH),
+            Math.atan2(HEIGHT, WIDTH),
+            Math.atan2(-HEIGHT, -WIDTH),
+            Math.atan2(HEIGHT, -WIDTH)
+        ];
+        diagonals.forEach(angle => {
+            ctx.beginPath();
+            ctx.moveTo(e.x, e.y);
+            let maxLen = Math.max(WIDTH, HEIGHT) * 1.7;
+            let endX = e.x + Math.cos(angle) * maxLen;
+            let endY = e.y + Math.sin(angle) * maxLen;
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        });
+    } else if (e.type === "explosion") {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 50 + e.timer*3, 0, Math.PI*2);
+        ctx.strokeStyle = "#ffd54f";
+        ctx.lineWidth = 8 + e.timer/2;
+        ctx.globalAlpha = e.timer / 16 * 0.8;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 30 + e.timer*2, 0, Math.PI*2);
+        ctx.strokeStyle = "#ffa500";
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = e.timer / 16 * 0.4;
+        ctx.stroke();
+    } else if (e.type === "meteor") {
+        ctx.globalAlpha = e.timer / 14 * 0.8;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y + 8*(14-e.timer), 22, 0, Math.PI*2);
+        ctx.fillStyle = "#f4d341";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(e.x, e.y + 8*(14-e.timer), 15, 0, Math.PI*2);
+        ctx.fillStyle = "#ff5722";
+        ctx.fill();
+    } else if (e.type === "circle") {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 50 + 30*e.timer/18, 0, Math.PI*2);
+        ctx.strokeStyle = "#39f";
+        ctx.lineWidth = 6 + 5*e.timer/18;
+        ctx.globalAlpha = e.timer / 18 * 0.8;
+        ctx.stroke();
+    } else if (e.type === "enemyLaser") {
+        ctx.beginPath();
+        ctx.moveTo(enemy.x, enemy.y + ENEMY_RADIUS);
+        ctx.lineTo(e.tx, e.ty);
+        ctx.strokeStyle = "#f00";
+        ctx.lineWidth = 20;
+        ctx.globalAlpha = e.timer / 16 * 0.7;
+        ctx.shadowColor = "#f77";
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    ctx.restore();
 }
 
-// ---- ゲーム状態進行 ----
 function update() {
     // キャラ物理
     for(const c of players){
@@ -214,6 +275,40 @@ function update() {
     // エフェクト進行
     effectTimers = effectTimers.filter(e => --e.timer > 0);
 
+    // --- 敵ヒット判定・反射 ---
+    for (let c of players) {
+        if (c.hp > 0 && enemy.hp > 0) {
+            const dx = c.x - enemy.x;
+            const dy = c.y - enemy.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < CHAR_RADIUS + ENEMY_RADIUS) {
+                enemy.hp = Math.max(0, enemy.hp - 1);
+                const angle = Math.atan2(dy, dx);
+                const overlap = CHAR_RADIUS + ENEMY_RADIUS - dist + 1;
+                c.x += Math.cos(angle) * overlap;
+                c.y += Math.sin(angle) * overlap;
+                c.vx += Math.cos(angle) * 2.2;
+                c.vy += Math.sin(angle) * 2.2;
+            }
+        }
+    }
+
+    // --- 友情判定 ---
+    for (let i = 0; i < PLAYER_NUM; i++) {
+        for (let j = 0; j < PLAYER_NUM; j++) {
+            if (i === j) continue;
+            let a = players[i], b = players[j];
+            if (a.hp > 0 && b.hp > 0) {
+                const dx = a.x - b.x, dy = a.y - b.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (!friendFlags[i][j] && dist < CHAR_RADIUS*2+2) {
+                    friendFlags[i][j] = true;
+                    triggerFriendCombo(j, b);
+                }
+            }
+        }
+    }
+
     // 勝利・敗北判定
     if(enemy.hp<=0 && state!=="WIN"){
         state = "WIN";
@@ -228,7 +323,28 @@ function update() {
     setHpBar();
 }
 
-// --- 入力系 ---
+// --- 友情発動 ---
+function triggerFriendCombo(idx, charObj) {
+    if (charObj.hp <= 0) return;
+    if (idx === 0) { // 1P クロスレーザー
+        effectTimers.push({ type: "xlaser", x: charObj.x, y: charObj.y, timer: 16 });
+        if (enemy.hp > 0) enemy.hp = Math.max(0, enemy.hp - 2);
+    }
+    if (idx === 1) { // 2P 爆発
+        effectTimers.push({ type: "explosion", x: charObj.x, y: charObj.y, timer: 16 });
+        if (enemy.hp > 0) enemy.hp = Math.max(0, enemy.hp - 1);
+    }
+    if (idx === 2) { // 3P メテオ
+        effectTimers.push({ type: "meteor", x: enemy.x, y: enemy.y, timer: 14 });
+        if (enemy.hp > 0) enemy.hp = Math.max(0, enemy.hp - 2);
+    }
+    if (idx === 3) { // 4P サークル
+        effectTimers.push({ type: "circle", x: charObj.x, y: charObj.y, timer: 16 });
+        if (enemy.hp > 0) enemy.hp = Math.max(0, enemy.hp - 1);
+    }
+}
+
+// --- 入力 ---
 canvas.addEventListener("mousedown",(e)=>{
     if(state!=="PLAYER_TURN") return;
     let c = players[currentPlayer];
@@ -312,7 +428,9 @@ function handleEndOfTurn() {
             break;
         }
     }
-    // すべて倒れている場合
+    // 友情誘発フラグリセット
+    friendFlags = Array(PLAYER_NUM).fill(null).map(() => Array(PLAYER_NUM).fill(false));
+
     if(next === -1) {
         state = "LOSE";
         setTurnCounter();
@@ -340,12 +458,11 @@ function handleEndOfTurn() {
 
 // --- 敵の攻撃処理 ---
 function enemyAttack(){
-    // 生存キャラのどれかを狙う
     let alive = players.filter(c=>c.hp>0);
     if(!alive.length) return;
     let target = alive[Math.floor(Math.random()*alive.length)];
-    target.hp = Math.max(0, target.hp-3);
-    setHpBar();
+    effectTimers.push({ type: "enemyLaser", tx: target.x, ty: target.y, timer: 16 });
+    setTimeout(()=>{ target.hp = Math.max(0, target.hp-3); setHpBar(); }, 250);
 }
 
 // ---- HPバー・ターン数UI ----
